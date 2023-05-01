@@ -1,4 +1,6 @@
 import requests
+from discord_clash_bot.db.schema import Member, Clan
+
 class CocClient():
     """
     Clash of Clans API wrapper
@@ -32,3 +34,21 @@ class CocClient():
         url = f"{self.prefix}players/%23{player_tag.strip('#')}"
         r = requests.get(url, headers=self.headers)
         return r.json()
+
+    def get_clan_members(self, clan_tag):
+        """
+        Returns clan members
+        """
+        members = self.get_clan(clan_tag).get("memberList")
+
+        # create a list of players
+        players = []
+        
+        for member in members:
+            players.append(Member(member["name"],
+                            member["tag"],
+                            clan_tag,
+                            member["role"],
+                            member.get("warPreference"))
+            )
+        return players

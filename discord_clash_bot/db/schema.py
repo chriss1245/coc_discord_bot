@@ -27,15 +27,15 @@ class Member(Base):
     tag = Column(String, primary_key=True)
     clan_tag = Column(String, ForeignKey('clan.tag'))
     role = Column(String)
-    war_preference = Column(String)
+    war_preference = Column(String, nullable=True)
     
 
     def __init__(self, name, tag, clan_tag, role,
-                 war_preference):
+                 war_preference = None):
         self.name = name
         self.tag = tag
         self.clan_tag = clan_tag
-        self.role = role
+        self.role = role.replace("admin", "elder")
         self.war_preference = war_preference
 
 

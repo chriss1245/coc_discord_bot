@@ -1,20 +1,25 @@
 from . import bot
 from . import bot, commands
+import traceback
 
-from .constants import *
+import toml
+from pathlib import Path
+
+from discord_clash_bot.api.coc_wrapper import CocClient
 
 import discord
 
-from discord_clash_bot.db import db
+from discord_clash_bot.db.db import DBConnection
 
+
+
+secrets = toml.load(Path().cwd() / "secrets.toml")
+
+
+db = DBConnection(secrets["db"]["url"])
+coc = CocClient(secrets["coc"]["token"])
+clan_tag = secrets["coc"]["clan"]
 #-------------------------General Purpose Commands-------------------------#
-
-@bot.command()
-async def ping(ctx):
-    """
-    Ping the bot
-    """
-    await ctx.send("pong")
 
 @bot.command()
 async def setup(ctx, nickname):
@@ -25,12 +30,23 @@ async def setup(ctx, nickname):
     # if yes, write welcome to the clan, you are now a member of the clan
     # and give the member the member role
     # if not write this user is not recognized, try again
-
-    if nickname == "test":
+    members = coc.get_clan_members(clan_tag)
+    member_names = [member.name for member in members]
+    if nickname in member_names:
         await ctx.send("Welcome to the clan, you are now a member of the clan")
         # give the member the member role
-        role = discord.utils.get(ctx.guild.roles, name="member")
+        # get the role of the member
+        member = members[member_names.index(nickname)]
+        # convert to lower case
+        role_name = member.role.lower()
+        await ctx.send("Your role is: " + role_name)
+        role = discord.utils.get(ctx.guild.roles, name=role_name)
+        
         await ctx.author.add_roles(role)
+
+        #remove foreigner role
+        foreigner_role = discord.utils.get(ctx.guild.roles, name="foreigner")
+        await ctx.author.remove_roles(foreigner_role)
 
         #change the nickname of the member
         await ctx.author.edit(nick=nickname)
@@ -39,7 +55,7 @@ async def setup(ctx, nickname):
         "Please enter your Clash of Clans nickname using the following command:\n" + \
         "```!setup <your nickname>``` \n or" + \
         "Please enter your Clash of Clans tag using the following command:\n" + \
-        "```!setup_tag <your tag>```")
+        "```!setup_tag <#your tag>```")
 
 @bot.command()
 async def setup_tag(ctx, tag):
@@ -51,20 +67,31 @@ async def setup_tag(ctx, tag):
     # and give the member the member role
     # if not write this user is not recognized, try again
 
-    if tag == "test":
+    members = coc.get_clan_members(clan_tag)
+    member_tags = [member.tag for member in members]
+    if tag in member_tags:
+        # get the nickname of the member
+        member = members[member_tags.index(tag)]
+        nickname = member.name
+        role_name = member.role.lower()
+
+        # get the role of the member
+        role = discord.utils.get(ctx.guild.roles, name=role_name)
         await ctx.send("Welcome to the clan, you are now a member of the clan")
-        # give the member the member role
-        role = discord.utils.get(ctx.guild.roles, name="member")
         await ctx.author.add_roles(role)
 
+        #remove foreigner role
+        foreigner_role = discord.utils.get(ctx.guild.roles, name="foreigner")
+        await ctx.author.remove_roles(foreigner_role)
+
         #change the nickname of the member
-        await ctx.author.edit(nick=tag)
+        await ctx.author.edit(nick=nickname)
     else:
         await ctx.send("This tag is not recognized, please try again\n" + \
         "Please enter your Clash of Clans nickname using the following command:\n" + \
         "```!setup <your nickname>``` \n or" + \
         "Please enter your Clash of Clans tag using the following command:\n" + \
-        "```!setup_tag <your tag>```")
+        "```!setup_tag <#your tag>```")
 
 @bot.command()
 async def leave(ctx):
@@ -78,18 +105,42 @@ async def leave(ctx):
     await ctx.send(f"{ctx.author.mention} has left the clan")
 
     # remove the member role
-    role = discord.utils.get(ctx.guild.roles, name="member")
-    await ctx.author.remove_roles(role)
+    # remove all the roles of the member
+    for role in ctx.author.roles:
+
+        # remove all roles except @everyone
+        if role.name != "@everyone":
+            await ctx.author.remove_roles(role)
+        
+    # add the foreigner role
+    foreigner_role = discord.utils.get(ctx.guild.roles, name="foreigner")
+    await ctx.author.add_roles(foreigner_role)
+
+
 
 #-------------------------Role Commands-------------------------#
 @bot.command()
-@commands.has_role("co-leader")
+@commands.has_role("coleader")
 async def add_role(ctx, role: discord.Role, member: discord.Member):
     """
     Add a role to a member
     """
     await member.add_roles(role)
     await ctx.send(f"{member.mention} has been given the {role.mention} role")
+
+@bot.command()
+async def kick_out(ctx, member: discord.Member, reason: str = None):
+    """
+    Kick out a member
+    """
+
+    if ctx.author.top_role < member.top_role:
+        await ctx.send("You cannot kick out this member")
+        return
+    await member.kick()
+
+    # write in general that the member has been kicked out
+    await ctx.send(f"{member.mention} has been kicked out of the clan")
 
 
 #-------------------------Admin Commands-------------------------#
@@ -100,6 +151,17 @@ async def clear_all(ctx, amount=10):
     Clear messages
     """
     await ctx.channel.purge(limit=amount)
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def create_db(ctx):
+    """
+    Create the database
+    """
+    db.create_all()
+
+    await ctx.send("Database created")
+
 
 #-------------------------Events-------------------------#
 @bot.event
@@ -114,6 +176,16 @@ async def on_member_join(member):
     """
     Write in the welcome channel when a member joins
     """
+
+    # remove channel content if it is not empty
+    channel = discord.utils.get(member.guild.channels, name="welcome")
+    await channel.purge()
+
+
+    # give foreigner role
+    role = discord.utils.get(member.guild.roles, name="foreigner")
+    await member.add_roles(role)
+
     # get channel by name
     channel = discord.utils.get(member.guild.channels, name="welcome")
     await channel.send(f"Welcome {member.mention}!\n" + \
@@ -143,7 +215,20 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandNotFound):
         await ctx.send("Command not found")
     else:
-        await ctx.send("Something went wrong")
+        # check that the author is admin and the channel is debug
+
+        # get the debug channel
+        channel = discord.utils.get(ctx.guild.channels, name="debug")
+        trace = traceback.format_exception(type(error), error, error.__traceback__)
+        # print used command, author and channel
+        await channel.send("Command: " + str(ctx.command))
+        await channel.send("Author: " + str(ctx.author))
+        await channel.send("Channel: " + str(ctx.channel))
+
+        await channel.send("Something went wrong: " + str(error))
+        await channel.send("".join(trace))
+        await ctx.send("Unknown error ocurred. Try again later or contact the admin")
+
 
     
 
