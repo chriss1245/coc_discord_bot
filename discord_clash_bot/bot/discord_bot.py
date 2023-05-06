@@ -1,3 +1,8 @@
+"""
+Discord bot for the Clash of Clans. Interface with
+for commands and events
+"""
+
 from . import bot
 from . import bot, commands
 import traceback

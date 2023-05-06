@@ -1,6 +1,11 @@
 import requests
 from discord_clash_bot.db.schema import Member, Clan
 
+#wrapper class that confirms that the request was successful and raises an error
+# if not. @success decorators
+
+
+
 class CocClient():
     """
     Clash of Clans API wrapper
@@ -17,6 +22,10 @@ class CocClient():
         """
         url = f"{self.prefix}clans/{clan_tag.replace('#', '%23')}"
         r = requests.get(url, headers=self.headers)
+
+        # check if the request was successful
+        if r.status_code != 200:
+            raise Exception(f"Request was not successful, status code: {r.status_code}, reason: {r.reason}\n{r.text}")
         return r.json()
 
     def get_war(self):
