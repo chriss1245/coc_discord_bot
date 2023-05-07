@@ -51,3 +51,4 @@ media
 venv
 secrets*
 *.sqlite3
+.pylintrc
