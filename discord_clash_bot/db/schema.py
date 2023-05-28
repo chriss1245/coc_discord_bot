@@ -4,11 +4,13 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
+
 class Clan(Base):
     """
     Clan of clash of clans
     """
-    __tablename__ = 'clan'
+
+    __tablename__ = "clan"
     tag = Column(String, primary_key=True)
     name = Column(String)
     members = relationship("Member", backref="clan")
@@ -18,20 +20,19 @@ class Clan(Base):
         self.name = name
 
 
-class Member(Base):
+class Player(Base):
     """
     Clash of clans member table
     """
-    __tablename__ = 'member'
+
+    __tablename__ = "member"
     name = Column(String)
     tag = Column(String, primary_key=True)
-    clan_tag = Column(String, ForeignKey('clan.tag'))
+    clan_tag = Column(String, ForeignKey("clan.tag"))
     role = Column(String)
     war_preference = Column(String, nullable=True)
-    
 
-    def __init__(self, name, tag, clan_tag, role,
-                 war_preference = None):
+    def __init__(self, name, tag, clan_tag, role, war_preference=None):
         self.name = name
         self.tag = tag
         self.clan_tag = clan_tag
@@ -44,9 +45,9 @@ class Spell(Base):
     Table with the levels of spells of the members
     """
 
-    __tablename__ = 'spell'
+    __tablename__ = "spell"
     id = Column(Integer, primary_key=True)
-    member_tag = Column(Integer, ForeignKey('member.tag'))
+    member_tag = Column(Integer, ForeignKey("member.tag"))
     spell = Column(String)
     level = Column(Integer)
     village = Column(String)
@@ -57,13 +58,15 @@ class Spell(Base):
         self.level = level
         self.village = village
 
+
 class Heroe(Base):
     """
     Table with the levels of heros of the members
     """
-    __tablename__ = 'hero'
+
+    __tablename__ = "hero"
     id = Column(Integer, primary_key=True)
-    member_tag = Column(Integer, ForeignKey('member.tag'))
+    member_tag = Column(Integer, ForeignKey("member.tag"))
     hero = Column(String)
     level = Column(Integer)
     village = Column(String)
@@ -74,13 +77,15 @@ class Heroe(Base):
         self.level = level
         self.village = village
 
+
 class Troop(Base):
     """
     Table with the levels of troops of the members
     """
-    __tablename__ = 'troop'
+
+    __tablename__ = "troop"
     id = Column(Integer, primary_key=True)
-    member_tag = Column(Integer, ForeignKey('member.tag'))
+    member_tag = Column(Integer, ForeignKey("member.tag"))
     troop = Column(String)
     level = Column(Integer)
     village = Column(String)
@@ -91,11 +96,13 @@ class Troop(Base):
         self.level = level
         self.village = village
 
+
 class War(Base):
     """
     Table with the wars of the clan
     """
-    __tablename__ = 'war'
+
+    __tablename__ = "war"
     id = Column(Integer, primary_key=True)
     opponent = Column(String)
     result = Column(String)

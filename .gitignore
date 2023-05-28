@@ -52,3 +52,5 @@ venv
 secrets*
 *.sqlite3
 .pylintrc
+.coverage*
+.vscode
