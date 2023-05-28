@@ -49,8 +49,7 @@ l10n/
 *.egg-info
 media
 venv
-secrets*
+secrets.toml
 *.sqlite3
-.pylintrc
-.coverage*
+.coverage
 .vscode
