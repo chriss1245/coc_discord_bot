@@ -46,6 +46,7 @@ def get_logger(name: str, level: str = "INFO"):
 
     if LOG_PATH is not None:
         logg_file = LOG_PATH / f"{name.replace('.', '-')}.log"
+        logg_file.parent.mkdir(parents=True, exist_ok=True)
         logg_file.touch(exist_ok=True)
         file_handler = logging.FileHandler(logg_file)
         file_handler.setFormatter(formatter)
