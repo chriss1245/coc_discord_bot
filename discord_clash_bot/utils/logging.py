@@ -24,6 +24,7 @@ if "logging" in SECRETS:
     else:
         LOG_PATH = Path(LOG_PATH)
 
+
 def get_logger(name: str, level: str = "INFO"):
     """
     Create a logger
@@ -44,7 +45,9 @@ def get_logger(name: str, level: str = "INFO"):
     )
 
     if LOG_PATH is not None:
-        file_handler = logging.FileHandler(LOG_PATH / f"{name.replace('.', '-')}.log")
+        logg_file = LOG_PATH / f"{name.replace('.', '-')}.log"
+        logg_file.touch(exist_ok=True)
+        file_handler = logging.FileHandler(logg_file)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
@@ -53,6 +56,7 @@ def get_logger(name: str, level: str = "INFO"):
     logger.addHandler(stream_handler)
 
     return logger
+
 
 def get_module_logger(module, level: str = "INFO"):
     """
