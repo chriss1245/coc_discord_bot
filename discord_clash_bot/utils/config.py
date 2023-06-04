@@ -11,7 +11,7 @@ secrets_path = PROJECT_DIR / "secrets.toml"
 
 
 if not secrets_path.exists():
-    print(PROJECT_DIR.glob("*"))
+    print(list(PROJECT_DIR.glob("*")))
     raise FileNotFoundError(f"No secrets.toml file found in {PROJECT_DIR}")
 
 
