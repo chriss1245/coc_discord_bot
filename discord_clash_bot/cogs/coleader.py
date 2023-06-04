@@ -6,7 +6,14 @@ from discord.ext import commands
 
 from discord_clash_bot.api.coc import CocClient
 
-from .base import BaseCog
+# false positive from pylint
+# pylint: disable=relative-beyond-top-level
+from .base_cog import BaseCog
+from .base_cog import Rol
+
+
+ALLOWED_ROLES = [Rol.LEADER, Rol.COLEADER]
+
 
 class ColeaderCog(BaseCog):
     """
@@ -17,11 +24,15 @@ class ColeaderCog(BaseCog):
         self.bot = bot
         self.coc_client = CocClient()
 
+    def cog_before_invoke(self, ctx: commands.Context):
+        """
+        Apply permissions policy for commands before executing them
+        """
+        return self.check_role(ctx, ALLOWED_ROLES)
+
     @commands.command()
-    @commands.has_role("coleader")
     async def ping(self, ctx):
         """
         Ping the bot
         """
         await ctx.send(f"pong coleader{ctx.author.mention}")
-    

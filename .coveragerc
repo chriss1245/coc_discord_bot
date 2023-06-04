@@ -1,0 +1,11 @@
+# coverage run -m unittest discover -s tests settings. Fail under 80
+
+[coverage:run]
+branch = True
+source = .
+
+[coverage:report]
+show_missing = True
+skip_covered = True
+fail_under = 80
+

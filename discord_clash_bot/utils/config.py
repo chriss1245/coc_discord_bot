@@ -4,7 +4,6 @@ Handles the configuration and secrets.
 from pathlib import Path
 import toml
 
-
 PROJECT_DIR = Path(__file__).parent.parent.parent
 
 secrets_path = PROJECT_DIR / "secrets.toml"
