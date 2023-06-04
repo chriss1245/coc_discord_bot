@@ -12,4 +12,5 @@ secrets_path = PROJECT_DIR / "secrets.toml"
 if not secrets_path.exists():
     raise FileNotFoundError(f"No secrets.toml file found in {PROJECT_DIR}")
 
+
 SECRETS = toml.load(secrets_path)
