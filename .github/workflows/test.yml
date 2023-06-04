@@ -20,16 +20,10 @@ jobs:
           python -m pip install .
           python -m pip install --upgrade pip
           pip install coverage
-      
-      - name: Debug
-        run: |
-          pwd
-          ls .
-          ls ..
 
       - name: Setup config and secret files
         run: |
-          mv secrets.toml.template secrests.toml
+          mv secrets.toml.template secrets.toml
       - name: Testing
         run: |
           coverage run -m unittest discover ./tests
