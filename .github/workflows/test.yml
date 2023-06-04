@@ -27,3 +27,7 @@ jobs:
       - name: Testing
         run: |
           coverage run -m unittest discover ./tests
+
+      - name: Coverage
+        run: |
+          coverage report -m
