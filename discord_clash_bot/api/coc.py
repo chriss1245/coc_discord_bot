@@ -81,7 +81,7 @@ class CocClient(BaseClient):
         if response.status_code == 404:
             if method_name == "get_player":
                 raise PlayerNotFound()
-            elif method_name in ["get_clan", "get_war", "get_clan_members"]:
+            if method_name in ["get_clan", "get_war", "get_clan_members"]:
                 raise ClanNotFound()
         elif response.status_code >= 500:
             raise ServerException(response)

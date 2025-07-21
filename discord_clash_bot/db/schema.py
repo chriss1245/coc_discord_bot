@@ -1,3 +1,7 @@
+"""
+Database schema definitions for Discord Clash Bot.
+"""
+
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -13,7 +17,7 @@ class Clan(Base):
     __tablename__ = "clan"
     tag = Column(String, primary_key=True)
     name = Column(String)
-    members = relationship("Member", backref="clan")
+    members = relationship("Player", backref="clan")
 
     def __init__(self, tag, name):
         self.tag = tag
@@ -32,7 +36,7 @@ class Player(Base):
     role = Column(String)
     war_preference = Column(String, nullable=True)
 
-    def __init__(self, name, tag, clan_tag, role, war_preference=None):
+    def __init__(self, name, tag, clan_tag, role, *, war_preference=None):
         self.name = name
         self.tag = tag
         self.clan_tag = clan_tag
@@ -109,7 +113,7 @@ class War(Base):
     stars = Column(Integer)
     destruction = Column(Integer)
 
-    def __init__(self, clan_tag, opponent, result, stars, destruction):
+    def __init__(self, clan_tag, opponent, result, *, stars, destruction):
         self.clan_tag = clan_tag
         self.opponent = opponent
         self.result = result

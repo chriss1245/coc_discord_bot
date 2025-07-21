@@ -1,7 +1,12 @@
+"""
+Testing cases for base_client.py
+"""
+
 import unittest
 from unittest.mock import Mock, patch
-from discord_clash_bot.api.base_client import BaseClient, Method
+
 import requests
+from discord_clash_bot.api.base_client import BaseClient, Method
 
 
 class MockClient(BaseClient):

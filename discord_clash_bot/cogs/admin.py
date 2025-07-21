@@ -67,3 +67,13 @@ class AdminCog(BaseCog):
             await ctx.send(
                 "This command should be used in DM with the bot. Please send me a DM."
             )
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        """
+        Handle errors for admin commands.
+        Args:
+            ctx: context
+            error: error
+        """
+        logger.error(f"Admin command error: {error}")
+        await ctx.send(f"An error occurred: {error}")
