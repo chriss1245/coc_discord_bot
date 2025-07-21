@@ -17,7 +17,7 @@ class Clan(Base):
     __tablename__ = "clan"
     tag = Column(String, primary_key=True)
     name = Column(String)
-    members = relationship("Member", backref="clan")
+    members = relationship("Player", backref="clan")
 
     def __init__(self, tag, name):
         self.tag = tag
