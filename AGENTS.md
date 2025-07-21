@@ -1,141 +1,118 @@
-# Discord Bot Agents
+# Discord Bot Architecture
 
-This document describes the various agents and automated systems within the Discord Clash of Clans bot. The bot operates using a role-based agent system where different components act autonomously to manage clan operations and Discord server interactions.
+This document describes the cog-based architecture of the Discord Clash of Clans bot. It provides context for LLMs working on the codebase to understand the role-based permission system and how components interact.
 
-## Overview
+## Architecture Overview
 
-The bot implements a hierarchical agent system based on Clash of Clans roles, where each agent (cog) has specific permissions and responsibilities. These agents work together to automate clan management, member verification, and Discord server moderation.
+The bot uses Discord.py's **cog system** to organize functionality by role-based permissions. Each cog handles commands for specific Clash of Clans roles, with a base framework enforcing consistent permission checking.
 
-## Role-Based Agent Hierarchy
+## Role Hierarchy
 
-The bot recognizes the following role hierarchy, from highest to lowest privilege:
+The bot recognizes these Discord roles (defined in `base_cog.py`):
+1. **admin** - Server administrators 
+2. **leader** - Clan leaders
+3. **coleader** - Clan co-leaders  
+4. **elder** - Clan elders
+5. **member** - Clan members
+6. **foreigner** - Unverified users (default for new Discord members)
 
-1. **Admin** - Server administrators with full access
-2. **Leader** - Clan leaders with management privileges  
-3. **Coleader** - Clan co-leaders with limited management privileges
-4. **Elder** - Trusted clan members with moderate privileges
-5. **Member** - Regular clan members
-6. **Foreigner** - Unverified users (default role for new Discord members)
+## Current Cog Implementation
 
-## Agent Types
+### `BaseCog` (`base_cog.py`)
+**Purpose**: Abstract base class for all cogs
+**Key Features**:
+- Defines the `Role` enum with all supported roles
+- Enforces permission checking via abstract `cog_check()` method
+- Requires error handling via abstract `cog_command_error()` method
+- Provides basic `ping` command
 
-### 1. Administrative Agent (`AdminCog`)
+**Usage**: All cogs must inherit from `BaseCog` and implement the required abstract methods.
 
-**Role**: Server and bot administration
-**Permissions**: Full access to all bot functions
-**Responsibilities**:
-- Bot configuration and management
-- System administration commands
-- Override permissions for special cases
+### `AdminCog` (`admin.py`)
+**Purpose**: Administrative commands and server setup
+**Permissions**: `admin` role only (or bot owners)
+**Key Features**:
+- Only cog currently loaded in `main.py`
+- Handles new guild setup with `on_guild_join` event
+- Permission check allows DMs for bot owners
+- Uses `CocClient` for API integration
 
-**Allowed Roles**: Admin
+**Commands**: `setup_bot` (incomplete implementation)
 
-### 2. Leadership Agent (`ColeaderCog`) 
-
-**Role**: Clan leadership and management
-**Permissions**: Clan management functions
-**Responsibilities**:
-- Clan member management
-- Leadership-specific commands
-- Coordination between leaders
-
-**Allowed Roles**: Leader, Coleader
-
-### 3. Member Verification Agent (`DMCog`)
-
-**Role**: Automated member onboarding and verification
-**Permissions**: Role assignment and member verification
-**Responsibilities**:
-- **Automatic Member Onboarding**: When new users join the Discord server, automatically assigns the "foreigner" role
-- **Verification Process**: Guides new members through Clash of Clans account verification
-- **Account Linking**: Verifies Clash of Clans accounts using the official API
-- **Role Assignment**: Automatically assigns appropriate Discord roles based on verified Clash of Clans clan rank
-- **Member Departure**: Handles cleanup when members leave the server
-
-**Key Automated Behaviors**:
-- Sends welcome DM with setup instructions to new Discord members
-- Provides visual guides for finding Clash of Clans API tokens
-- Validates clan membership through API calls
-- Updates Discord nicknames to match Clash of Clans names
-- Announces new verified members in general chat
+### `DMCog` (`foreigner.py`) 
+**Purpose**: New member onboarding and verification
+**Key Features**:
+- **Automatic onboarding**: Assigns "foreigner" role to new members
+- **Verification flow**: Guides users through CoC account linking via DM
+- **Visual guides**: Sends screenshots showing how to find API tokens
+- **Role assignment**: Updates Discord roles based on verified CoC clan rank
+- **Cleanup**: Handles member departures
 
 **Commands**:
-- `!setup <nickname> <token>` - Verify account by Clash of Clans nickname
-- `!setup_tag <player_tag> <token>` - Verify account by player tag
+- `setup <nickname> <token>` - Verify by CoC nickname
+- `setup_tag <player_tag> <token>` - Verify by player tag
 
-### 4. Base Agent Framework (`BaseCog`)
+**Interaction Flow**:
+1. User joins Discord → `on_member_join` → assign "foreigner" role
+2. Send DM with setup instructions and visual guides
+3. User provides CoC credentials via DM commands
+4. Verify with CoC API via `CocClient`
+5. Update Discord role, nickname, and announce to clan
 
-**Role**: Foundation for all other agents
-**Permissions**: Basic bot functionality
-**Responsibilities**:
-- Permission checking system
-- Error handling framework
-- Common functionality shared across agents
-- Health check (`ping` command)
+### `ColeaderCog` (`coleader.py`)
+**Purpose**: Leadership commands 
+**Status**: **Has bug** - imports `Rol` instead of `Role`
+**Permissions**: `leader` and `coleader` roles
+**Note**: Not currently loaded in `main.py`
 
-## API Integration Agents
+### Missing Implementations
+- `elder.py` - Empty file
+- `member.py` - Empty file
 
-### Clash of Clans API Agent (`CocClient`)
+## API Integration
 
-**Role**: External API communication
-**Responsibilities**:
-- Fetch clan member data
-- Verify player tokens
-- Validate clan membership
-- Handle API rate limiting and errors
+### `CocClient` (`api/coc.py`)
+**Purpose**: Clash of Clans API wrapper
+**Key Methods**:
+- `get_clan_members(clan_tag)` - Fetch clan roster
+- `post_verify_player(player_tag, token)` - Verify user tokens
+- `get_player(player_tag)` - Get player details
+- Error handling for invalid tags, server errors
 
-**Key Functions**:
-- Player verification
-- Clan member enumeration
-- Token validation
-- Error handling for API failures
+**Usage**: Instantiated in cogs that need CoC API access
 
-## Security and Permissions
+## How Components Interact
 
-### Permission System
+1. **Permission Flow**: `BaseCog.cog_check()` → role validation → command execution
+2. **Verification Flow**: `DMCog` events → `CocClient` API calls → role updates
+3. **Error Handling**: Each cog implements `cog_command_error()` for consistent error responses
 
-Each agent implements role-based access control:
-- Commands are restricted based on Discord role hierarchy
-- Permission checks occur before command execution
-- Failed permission checks are logged and reported
+## Development Guidelines
 
-### Verification Process
+### Adding New Cogs
+1. Inherit from `BaseCog`
+2. Implement required abstract methods
+3. Define `allowed_roles` list
+4. Add to `main.py` cogs list to load
 
-The verification agent implements a secure multi-step process:
-1. New member joins Discord → automatically assigned "foreigner" role
-2. Member provides Clash of Clans nickname/tag and API token via DM
-3. Bot verifies token authenticity with Clash of Clans API
-4. Bot confirms clan membership
-5. Bot assigns appropriate Discord role based on clan rank
-6. Bot updates Discord nickname to match game name
-7. Bot announces successful verification to the clan
+### Permission Pattern
+```python
+def cog_check(self, ctx: commands.Context) -> bool:
+    if isinstance(ctx.author, Member):
+        return any(role.name in self.allowed_roles for role in ctx.author.roles)
+    return False  # or handle DM permissions
+```
 
-## Error Handling and Logging
+### API Integration Pattern
+```python
+def __init__(self, bot):
+    self.bot = bot
+    self.coc_client = CocClient()
+```
 
-All agents implement comprehensive error handling:
-- Failed API calls are logged and handled gracefully
-- Permission violations are logged for security monitoring
-- Invalid verification attempts are tracked
-- System errors are reported to administrators
+## Current Issues to Address
 
-## Configuration
-
-Agents are configured through:
-- `secrets.toml` - API keys and sensitive configuration
-- Role-based permission matrices
-- Clan-specific settings (clan tag, server channels)
-
-## Extensibility
-
-The agent system is designed for extensibility:
-- New agents can inherit from `BaseCog` 
-- Role-based permissions are automatically enforced
-- Modular design allows selective agent activation
-- Clear separation of concerns between agents
-
-## Monitoring and Maintenance
-
-- All agent activities are logged for monitoring
-- Health checks available through ping commands
-- Error tracking for debugging and maintenance
-- Performance monitoring for API interactions
+1. `ColeaderCog` has import bug (`Rol` vs `Role`)
+2. `elder.py` and `member.py` are empty
+3. Only `AdminCog` is loaded in `main.py`
+4. Missing complete implementations for leadership and member functionality
