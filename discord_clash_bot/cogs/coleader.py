@@ -9,10 +9,10 @@ from discord_clash_bot.api.coc import CocClient
 # false positive from pylint
 # pylint: disable=relative-beyond-top-level
 from .base_cog import BaseCog
-from .base_cog import Rol
+from .base_cog import Role
 
 
-ALLOWED_ROLES = [Rol.LEADER, Rol.COLEADER]
+ALLOWED_ROLES = [Role.LEADER, Role.COLEADER]
 
 
 class ColeaderCog(BaseCog):

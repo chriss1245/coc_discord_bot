@@ -4,9 +4,8 @@ Base class for all API connections
 
 import inspect
 from abc import ABC, abstractmethod
-from dataclasses import field
 from enum import Enum
-from typing import Any, Dict
+from typing import Dict
 
 import requests
 import urllib3
@@ -45,8 +44,8 @@ class BaseClient(ABC):
 
     def __init__(
         self,
-        token: str = field(default_factory=str),
-        headers: Dict[str, str] = field(default_factory=dict),
+        token: str = "",
+        headers: Dict[str, str] = None,
     ):
         """
         Base Api connection
@@ -59,7 +58,7 @@ class BaseClient(ABC):
         """
 
         self.token = token
-        self.headers = headers
+        self.headers = headers if headers is not None else {}
 
     @abstractmethod
     def add_token(self, request: requests.Request) -> requests.Request:
